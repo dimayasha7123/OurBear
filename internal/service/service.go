@@ -93,7 +93,7 @@ func (s *Service) runIteration(ctx context.Context, lastUpdateID int64) (int64, 
 	}
 
 	for _, up := range ups.Result {
-		if !isGoida(up.Message.Text) {
+		if !isGoida(strings.ToLower(up.Message.Text)) {
 			continue
 		}
 		if err = s.sendGoida(ctx, up.Message); err != nil {
@@ -147,6 +147,7 @@ var goidaLinks = []string{
 	"https://media1.tenor.com/m/O8PSKseHiCgAAAAd/%D0%B3%D0%BE%D0%B9%D0%B4%D0%B0-%D1%81%D0%B1%D0%BE%D1%80-%D0%B3%D0%BE%D0%B9%D0%B4%D1%8B.gif",
 	"https://media1.tenor.com/m/KvV5NIIqjiMAAAAd/%D0%BF%D1%80%D0%BE%D0%B4%D0%B0%D0%B5%D0%BC-%D0%B3%D0%BE%D0%B9%D0%B4%D1%83-%D0%B3%D0%BE%D0%B9%D0%B4%D0%B0.gif",
 	"https://media1.tenor.com/m/ikGQJ03gJq4AAAAd/%D0%BC%D1%8B%D0%B8%D0%B4%D0%B5%D0%BC-%D0%BA%D0%BE%D1%82%D0%B8%D0%BA.gif",
+	"https://media1.tenor.com/m/UC8TDXxucKgAAAAd/goida-%D0%B3%D0%BE%D0%B9%D0%B4%D0%B0.gif",
 }
 
 func createGoidaURL(apiKey string, chatID, messageID int64) string {
