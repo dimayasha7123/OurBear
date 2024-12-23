@@ -18,8 +18,6 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-// TODO: сделать так, чтобы возвращало разные гифки
-
 type chatData struct {
 	index int
 	order []int
