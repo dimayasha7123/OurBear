@@ -172,9 +172,20 @@ func createGoidaURL(apiKey string, chatID, messageID int64) string {
 
 var golRegexp = regexp.MustCompile(".*го+л.*")
 
+var goidaContainsWords = []string{
+	"гойд",
+	"медвед",
+	"русск",
+	"россия",
+	"рф",
+	"слон",
+}
+
 func isGoida(s string) bool {
-	if strings.Contains(s, "гойда") {
-		return true
+	for _, w := range goidaContainsWords {
+		if strings.Contains(s, w) {
+			return true
+		}
 	}
 	if golRegexp.MatchString(s) {
 		return true
