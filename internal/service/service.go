@@ -213,6 +213,7 @@ var golRegexp = regexp.MustCompile(".*го+л.*")
 var goidaContainsWords = []string{
 	"гойд",
 	"медвед",
+	"медвеж",
 	"русск",
 	"россия",
 	"рф",
