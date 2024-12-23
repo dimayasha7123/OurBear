@@ -10,6 +10,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"OurBear/internal/service/config"
@@ -19,19 +20,29 @@ import (
 
 // TODO: сделать так, чтобы возвращало разные гифки
 
+type chatData struct {
+	index int
+	order []int
+}
+
 type Service struct {
 	apiKey     string
 	delay      time.Duration
 	httpClient http.Client
+
+	mutex     sync.Mutex
+	chatsData map[int64]chatData
 }
 
-func New(config config.Config) Service {
-	return Service{
+func New(config config.Config) *Service {
+	return &Service{
 		apiKey: config.ApiKey,
 		delay:  config.Delay,
 		httpClient: http.Client{
 			Timeout: config.Timeout,
 		},
+		mutex:     sync.Mutex{},
+		chatsData: make(map[int64]chatData),
 	}
 }
 
@@ -107,7 +118,24 @@ func (s *Service) runIteration(ctx context.Context, lastUpdateID int64) (int64, 
 }
 
 func (s *Service) sendGoida(ctx context.Context, message message) error {
-	req, err := http.NewRequestWithContext(ctx, "GET", createGoidaURL(s.apiKey, message.Chat.ID, message.MessageID), nil)
+	var goidaLink string
+
+	s.mutex.Lock()
+	cd, ok := s.chatsData[message.Chat.ID]
+	if !ok || cd.index == len(cd.order) {
+		cd = chatData{
+			index: 0,
+			order: makeOrder(),
+		}
+	}
+
+	goidaLink = goidaLinks[cd.order[cd.index]]
+	cd.index++
+
+	s.chatsData[message.Chat.ID] = cd
+	s.mutex.Unlock()
+
+	req, err := http.NewRequestWithContext(ctx, "GET", createGoidaURL(s.apiKey, message.Chat.ID, message.MessageID, goidaLink), nil)
 	if err != nil {
 		return fmt.Errorf("failed to create request: %w", err)
 	}
@@ -121,10 +149,6 @@ func (s *Service) sendGoida(ctx context.Context, message message) error {
 	}
 
 	return nil
-}
-
-type replyParameters struct {
-	MessageID int64 `json:"message_id"`
 }
 
 var goidaLinks = []string{
@@ -150,8 +174,24 @@ var goidaLinks = []string{
 	"https://media1.tenor.com/m/UC8TDXxucKgAAAAd/goida-%D0%B3%D0%BE%D0%B9%D0%B4%D0%B0.gif",
 }
 
-func createGoidaURL(apiKey string, chatID, messageID int64) string {
-	gifURL := goidaLinks[rand.Int31n(int32(len(goidaLinks)))]
+func makeOrder() []int {
+	order := make([]int, len(goidaLinks))
+
+	for i := range goidaLinks {
+		order[i] = i
+	}
+	rand.Shuffle(len(order), func(i, j int) {
+		order[i], order[j] = order[j], order[i]
+	})
+
+	return order
+}
+
+type replyParameters struct {
+	MessageID int64 `json:"message_id"`
+}
+
+func createGoidaURL(apiKey string, chatID, messageID int64, gifURL string) string {
 	url := url.URL{
 		Scheme: "https",
 		Host:   "api.telegram.org",
